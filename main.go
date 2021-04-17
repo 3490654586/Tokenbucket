@@ -15,6 +15,8 @@ type Bucket struct {
 	times int
 }
 
+
+var num int64
 func NewBucket(r int,b int,times int) *Bucket {
 	bucket := &Bucket{
 		   cap:   b,
@@ -22,39 +24,31 @@ func NewBucket(r int,b int,times int) *Bucket {
 		   ch:    make(chan int64,b),
 		   times: times,
 	   }
-	  go bucket.startTicker()
+	 go bucket.startTicker()
      return bucket
 }
 
 
 func (this *Bucket) startTicker() {
-	for i := 0; i < this.cap; i++ {
-		this.ch <- this.SetToken()
-	}
-	for {
-		select {
-		case <-this.ch:
-			for i := len(this.ch); i < this.cap; i++ {
-				this.Add()
-			}
+	for i := 0;i < cap(this.ch) ; i++  {
+		for j := 0; j < this.num ; i++  {
+			this.ch <- this.SetToken()
 		}
 	}
 }
 
+
 //生成token放入桶内
-func (this *Bucket)SetToken()int64 {
-	return time.Now().Unix()
+func (this *Bucket)SetToken()int64{
+	num = num + 1
+	return num
 }
+
 
 //向桶里存入token
 func (this *Bucket)Add(){
         this.mu.Lock()
-        if len(this.ch) < this.cap{
-			time.Sleep(time.Second*time.Duration(this.times))
-			for i := 0; i < this.num ; i++  {
-				this.ch <- this.SetToken()
-			}
-		}
+        this.ch <- this.SetToken()
 		defer this.mu.Unlock()
 }
 
@@ -70,10 +64,10 @@ func (this *Bucket)GetToken(n int){
 
 
 func main()  {
-	bu :=NewBucket(1,5,1)
-
+	//NewBucket(2,5,1)
+	bu :=NewBucket(2,4,5)
 	for{
-		bu.GetToken(1)
+		bu.GetToken(2)
 		fmt.Println(time.Now().Format("2016-04-02 15:04:05"))
 		time.Sleep(time.Second)
 	}
